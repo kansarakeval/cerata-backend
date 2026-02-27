@@ -54,25 +54,16 @@ app.use(helmet({
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false
 }));
-// SEO REDIRECTS: Map old ranking URLs to new URLs
-app.use((req, res, next) => {
-    // Check if the request is for the old Testosterone Enanthate page
-    if (req.url === '/product/testosterone-enanthate-api-84') {
-        return res.redirect(301, 'https://www.ceratapharma.com/product%20details.html?id=699c24cc8b894deac979e2f1');
-    }
-    
-    // You can add more old ranking pages here in the future
-    /*
-    if (req.url === '/old-page-link') {
-        return res.redirect(301, 'https://www.ceratapharma.com/new-page-link');
-    }
-    */
 
-    next();
-});
 app.use(morgan('dev'));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+app.get('/product/testosterone-enanthate-api-84', (req, res) => {
+    return res.redirect(301, 
+        'https://www.ceratapharma.com/product%20details.html?id=699c24cc8b894deac979e2f1'
+    );
+});
 
 // Serve static files (disable cache to avoid stale images after updates)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
