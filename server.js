@@ -17,6 +17,7 @@ const learnRoutes = require('./routes/learn');
 const userRoutes = require('./routes/users');
 
 const app = express();
+app.set('trust proxy', 1);
 
 // Create uploads directory
 const fs = require('fs');

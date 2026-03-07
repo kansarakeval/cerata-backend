@@ -2,6 +2,7 @@ const Product = require('../models/Product');
 const Category = require('../models/Category');
 const path = require('path');
 const fs = require('fs').promises;
+const { getBaseUrl } = require('../utils/baseUrl');
 
 // Helper function
 const sanitizeParam = (param) => {
@@ -101,7 +102,7 @@ exports.createProduct = async (req, res) => {
         await product.save();
 
         // Prepare response
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = getBaseUrl(req);
         const productData = product.toJSON();
         productData.image_url = product.image ? `${baseUrl}/uploads/products/${product.image}` : null;
 
@@ -153,7 +154,7 @@ exports.getAllProducts = async (req, res) => {
             Product.countDocuments(query)
         ]);
 
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = getBaseUrl(req);
         const productsWithUrl = products.map(product => {
             const productObj = product.toJSON();
             productObj.image_url = product.image ? `${baseUrl}/uploads/products/${product.image}` : null;
@@ -207,7 +208,7 @@ exports.getProductById = async (req, res) => {
             });
         }
 
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = getBaseUrl(req);
         const productObj = product.toJSON();
         productObj.image_url = product.image ? `${baseUrl}/uploads/products/${product.image}` : null;
         productObj.category_name = product.category_id?.category_name || null;
@@ -294,7 +295,7 @@ exports.updateProduct = async (req, res) => {
         // Get updated product with populated data
         const updatedProduct = await Product.findById(id).populate('category_id', 'category_name');
         
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = getBaseUrl(req);
         const productData = updatedProduct.toJSON();
         productData.image_url = updatedProduct.image ? `${baseUrl}/uploads/products/${updatedProduct.image}` : null;
         productData.category_name = updatedProduct.category_id?.category_name || null;
@@ -385,7 +386,7 @@ exports.getProductsByCategory = async (req, res) => {
             .populate('category_id', 'category_name')
             .sort({ api_product_name: 1 });
 
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = getBaseUrl(req);
         const productsWithUrl = products.map(product => {
             const productObj = product.toJSON();
             productObj.image_url = product.image ? `${baseUrl}/uploads/products/${product.image}` : null;
@@ -416,7 +417,7 @@ exports.getActiveProducts = async (req, res) => {
             .populate('category_id', 'category_name')
             .sort({ api_product_name: 1 });
 
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = getBaseUrl(req);
         const productsWithUrl = products.map(product => {
             const productObj = product.toJSON();
             productObj.image_url = product.image ? `${baseUrl}/uploads/products/${product.image}` : null;
@@ -482,7 +483,7 @@ exports.searchProducts = async (req, res) => {
             Product.countDocuments(query)
         ]);
 
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = getBaseUrl(req);
         const productsWithUrl = products.map(product => {
             const productObj = product.toJSON();
             productObj.image_url = product.image ? `${baseUrl}/uploads/products/${product.image}` : null;

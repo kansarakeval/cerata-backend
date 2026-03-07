@@ -2,6 +2,7 @@ const Category = require('../models/Category');
 const Product = require('../models/Product');
 const path = require('path');
 const fs = require('fs').promises;
+const { getBaseUrl } = require('../utils/baseUrl');
 
 exports.createCategory = async (req, res) => {
     try {
@@ -38,7 +39,7 @@ exports.createCategory = async (req, res) => {
 
         await category.save();
 
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = getBaseUrl(req);
         const categoryData = category.toJSON();
         categoryData.image_url = category.image ? `${baseUrl}/uploads/categories/${category.image}` : null;
 
@@ -60,7 +61,7 @@ exports.getAllCategories = async (req, res) => {
     try {
         const categories = await Category.find().sort({ created_at: -1 });
         
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = getBaseUrl(req);
         
         const categoriesWithDetails = await Promise.all(categories.map(async (category) => {
             const productCount = await Product.countDocuments({ category_id: category._id });
@@ -99,7 +100,7 @@ exports.getCategoryById = async (req, res) => {
             });
         }
 
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = getBaseUrl(req);
         const productCount = await Product.countDocuments({ category_id: category._id });
         
         const categoryObj = category.toJSON();
@@ -167,7 +168,7 @@ exports.updateCategory = async (req, res) => {
 
         await category.save();
 
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = getBaseUrl(req);
         const productCount = await Product.countDocuments({ category_id: category._id });
         const categoryObj = category.toJSON();
         categoryObj.image_url = category.image ? `${baseUrl}/uploads/categories/${category.image}` : null;
@@ -236,7 +237,7 @@ exports.getActiveCategories = async (req, res) => {
     try {
         const categories = await Category.find({ status: 'active' }).sort({ category_name: 1 });
         
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = getBaseUrl(req);
         const categoriesWithUrl = categories.map(category => {
             const catObj = category.toJSON();
             catObj.image_url = category.image ? `${baseUrl}/uploads/categories/${category.image}` : null;
