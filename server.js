@@ -19,12 +19,32 @@ const userRoutes = require('./routes/users');
 const app = express();
 app.set('trust proxy', 1);
 
+const allowedOrigins = [
+    'http://127.0.0.1:5500',
+    'http://localhost:5500',
+    'https://ceratapharma.com',
+    'https://www.ceratapharma.com',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000'
+];
+
+// Updated CORS configuration for credentials
 const corsOptions = {
-    // Reflect any requesting origin so the API is reachable from any frontend/server.
-    origin: true,
+    origin: function(origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            console.log(`CORS blocked for origin: ${origin}`);
+            callback(null, false); // Don't block, just don't allow
+        }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+    exposedHeaders: ['Authorization'],
     optionsSuccessStatus: 204
 };
 
@@ -45,7 +65,7 @@ if (!fs.existsSync(uploadDir)) {
 // Connect to MongoDB
 connectDB();
 
-// CORS configuration
+// CORS configuration - MUST come before other middleware
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
@@ -94,6 +114,18 @@ app.use((req, res, next) => {
     next();
 });
 
+// Health check route - MUST be before API routes
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        service: 'Cerata Pharma API',
+        version: '1.0.0',
+        database: 'MongoDB',
+        uptime: process.uptime()
+    });
+});
+
 // Root route
 app.get('/', (req, res) => {
     res.json({
@@ -106,13 +138,14 @@ app.get('/', (req, res) => {
             products: '/api/products',
             enquiries: '/api/enquiries',
             learn: '/api/learn',
-            users: '/api/users'
+            users: '/api/users',
+            health: '/health'
         }
     });
 });
 
-// Health check route - FIXED to be at root level
-app.get('/health', (req, res) => {
+// API health check
+app.get('/api/health', (req, res) => {
     res.json({
         status: 'OK',
         timestamp: new Date().toISOString(),
