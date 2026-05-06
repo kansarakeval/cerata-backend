@@ -19,6 +19,15 @@ const userRoutes = require('./routes/users');
 const app = express();
 app.set('trust proxy', 1);
 
+const corsOptions = {
+    // Reflect any requesting origin so the API is reachable from any frontend/server.
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With'],
+    optionsSuccessStatus: 204
+};
+
 // Create uploads directory
 const fs = require('fs');
 const uploadDir = 'uploads';
@@ -36,19 +45,9 @@ if (!fs.existsSync(uploadDir)) {
 // Connect to MongoDB
 connectDB();
 
-// CORS configuration - allow any origin and support credentials
-app.use(cors({
-    origin: true,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
-}));
-
-// Handle preflight requests
-app.options('*', cors({
-    origin: true,
-    credentials: true
-}));
+// CORS configuration
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Middleware
 app.use(helmet({
