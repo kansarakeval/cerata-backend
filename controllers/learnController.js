@@ -2,7 +2,7 @@ const LearnCategory = require('../models/LearnCategory');
 const Learn = require('../models/Learn');
 const path = require('path');
 const fs = require('fs').promises;
-const { getBaseUrl } = require('../utils/baseUrl');
+const { getUploadsBaseUrl } = require('../utils/baseUrl');
 
 // Helper function
 const sanitizeParam = (param) => {
@@ -67,9 +67,9 @@ exports.createLearnCategory = async (req, res) => {
 
         await category.save();
 
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         const categoryData = category.toJSON();
-        categoryData.image_url = category.image ? `${baseUrl}/uploads/learns/${category.image}` : null;
+        categoryData.image_url = category.image ? `${uploadsBaseUrl}/learns/${category.image}` : null;
 
         res.status(201).json({
             success: true,
@@ -98,7 +98,7 @@ exports.getAllLearnCategories = async (req, res) => {
 
         const categories = await LearnCategory.find(query).sort({ category_name: 1 });
 
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         
         const categoriesWithDetails = await Promise.all(categories.map(async (category) => {
             const articleCount = await Learn.countDocuments({ 
@@ -107,7 +107,7 @@ exports.getAllLearnCategories = async (req, res) => {
             });
             
             const categoryObj = category.toJSON();
-            categoryObj.image_url = category.image ? `${baseUrl}/uploads/learns/${category.image}` : null;
+            categoryObj.image_url = category.image ? `${uploadsBaseUrl}/learns/${category.image}` : null;
             categoryObj.article_count = articleCount;
             
             return categoryObj;
@@ -149,7 +149,7 @@ exports.getLearnCategoryById = async (req, res) => {
             });
         }
 
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         const articleCount = await Learn.countDocuments({ 
             learn_category_id: id, 
             status: 'active' 
@@ -164,12 +164,12 @@ exports.getLearnCategoryById = async (req, res) => {
 
         const articlesWithUrl = articles.map(article => {
             const articleObj = article.toJSON();
-            articleObj.image_url = article.image ? `${baseUrl}/uploads/learns/${article.image}` : null;
+            articleObj.image_url = article.image ? `${uploadsBaseUrl}/learns/${article.image}` : null;
             return articleObj;
         });
 
         const categoryObj = category.toJSON();
-        categoryObj.image_url = category.image ? `${baseUrl}/uploads/learns/${category.image}` : null;
+        categoryObj.image_url = category.image ? `${uploadsBaseUrl}/learns/${category.image}` : null;
         categoryObj.article_count = articleCount;
 
         res.json({
@@ -242,9 +242,9 @@ exports.updateLearnCategory = async (req, res) => {
 
         // Get updated category
         const updatedCategory = await LearnCategory.findById(id);
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         const categoryData = updatedCategory.toJSON();
-        categoryData.image_url = updatedCategory.image ? `${baseUrl}/uploads/learns/${updatedCategory.image}` : null;
+        categoryData.image_url = updatedCategory.image ? `${uploadsBaseUrl}/learns/${updatedCategory.image}` : null;
 
         res.json({
             success: true,
@@ -360,9 +360,9 @@ exports.createLearnArticle = async (req, res) => {
 
         await article.save();
 
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         const articleData = article.toJSON();
-        articleData.image_url = article.image ? `${baseUrl}/uploads/learns/${article.image}` : null;
+        articleData.image_url = article.image ? `${uploadsBaseUrl}/learns/${article.image}` : null;
 
         res.status(201).json({
             success: true,
@@ -412,10 +412,10 @@ exports.getAllLearnArticles = async (req, res) => {
             Learn.countDocuments(query)
         ]);
 
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         const articlesWithUrl = articles.map(article => {
             const articleObj = article.toJSON();
-            articleObj.image_url = article.image ? `${baseUrl}/uploads/learns/${article.image}` : null;
+            articleObj.image_url = article.image ? `${uploadsBaseUrl}/learns/${article.image}` : null;
             articleObj.category_name = article.learn_category_id?.category_name || null;
             delete articleObj.learn_category_id;
             return articleObj;
@@ -467,10 +467,10 @@ exports.getAllLearnArticlesNoPagination = async (req, res) => {
             .populate('learn_category_id', 'category_name')
             .sort({ date: -1, created_at: -1 });
 
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         const articlesWithUrl = articles.map(article => {
             const articleObj = article.toJSON();
-            articleObj.image_url = article.image ? `${baseUrl}/uploads/learns/${article.image}` : null;
+            articleObj.image_url = article.image ? `${uploadsBaseUrl}/learns/${article.image}` : null;
             articleObj.category_name = article.learn_category_id?.category_name || null;
             delete articleObj.learn_category_id;
             return articleObj;
@@ -512,9 +512,9 @@ exports.getLearnArticleById = async (req, res) => {
             });
         }
 
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         const articleObj = article.toJSON();
-        articleObj.image_url = article.image ? `${baseUrl}/uploads/learns/${article.image}` : null;
+        articleObj.image_url = article.image ? `${uploadsBaseUrl}/learns/${article.image}` : null;
         articleObj.category_name = article.learn_category_id?.category_name || null;
         delete articleObj.learn_category_id;
 
@@ -605,9 +605,9 @@ exports.updateLearnArticle = async (req, res) => {
 
         const updatedArticle = await Learn.findById(id).populate('learn_category_id', 'category_name');
         
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         const articleData = updatedArticle.toJSON();
-        articleData.image_url = updatedArticle.image ? `${baseUrl}/uploads/learns/${updatedArticle.image}` : null;
+        articleData.image_url = updatedArticle.image ? `${uploadsBaseUrl}/learns/${updatedArticle.image}` : null;
         articleData.category_name = updatedArticle.learn_category_id?.category_name || null;
         delete articleData.learn_category_id;
 
@@ -678,10 +678,10 @@ exports.getFeaturedArticles = async (req, res) => {
             .sort({ date: -1, created_at: -1 })
             .limit(parseInt(limit));
 
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         const articlesWithUrl = articles.map(article => {
             const articleObj = article.toJSON();
-            articleObj.image_url = article.image ? `${baseUrl}/uploads/learns/${article.image}` : null;
+            articleObj.image_url = article.image ? `${uploadsBaseUrl}/learns/${article.image}` : null;
             articleObj.category_name = article.learn_category_id?.category_name || null;
             delete articleObj.learn_category_id;
             return articleObj;
@@ -735,10 +735,10 @@ exports.getArticlesByCategory = async (req, res) => {
             })
         ]);
 
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         const articlesWithUrl = articles.map(article => {
             const articleObj = article.toJSON();
-            articleObj.image_url = article.image ? `${baseUrl}/uploads/learns/${article.image}` : null;
+            articleObj.image_url = article.image ? `${uploadsBaseUrl}/learns/${article.image}` : null;
             return articleObj;
         });
 
@@ -748,7 +748,7 @@ exports.getArticlesByCategory = async (req, res) => {
                 category: {
                     _id: category._id,
                     category_name: category.category_name,
-                    image_url: category.image ? `${baseUrl}/uploads/learns/${category.image}` : null
+                    image_url: category.image ? `${uploadsBaseUrl}/learns/${category.image}` : null
                 },
                 articles: articlesWithUrl
             },

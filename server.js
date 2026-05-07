@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 // Connect to MongoDB
@@ -48,19 +49,22 @@ const corsOptions = {
     optionsSuccessStatus: 204
 };
 
-// Create uploads directory
-const fs = require('fs');
-const uploadDir = 'uploads';
+// Create uploads directory and subdirectories
+const uploadDir = path.join(__dirname, 'uploads');
+const subDirs = ['categories', 'products', 'learns', 'others'];
+
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
-    ['categories', 'products', 'learns', 'others'].forEach(subDir => {
-        const dirPath = path.join(uploadDir, subDir);
-        if (!fs.existsSync(dirPath)) {
-            fs.mkdirSync(dirPath, { recursive: true });
-        }
-    });
-    console.log('📁 Upload directories created');
+    console.log('📁 Main uploads directory created');
 }
+
+subDirs.forEach(subDir => {
+    const dirPath = path.join(uploadDir, subDir);
+    if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+        console.log(`📁 Created: ${dirPath}`);
+    }
+});
 
 // Connect to MongoDB
 connectDB();
@@ -96,17 +100,57 @@ app.use((req, res, next) => {
     next();
 });
 
-// Serve static files (disable cache to avoid stale images after updates)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+// Debug middleware for static file requests
+app.use('/uploads', (req, res, next) => {
+    console.log(`📁 Static file request: ${req.url}`);
+    next();
+});
+
+// Serve static files from uploads directory with proper path resolution
+const uploadsAbsolutePath = path.resolve(__dirname, 'uploads');
+console.log(`📂 Serving static files from: ${uploadsAbsolutePath}`);
+
+// Check if uploads directory exists and is readable
+try {
+    fs.accessSync(uploadsAbsolutePath, fs.constants.R_OK);
+    console.log('✅ Uploads directory is readable');
+} catch (err) {
+    console.error('❌ Uploads directory is not readable:', err.message);
+}
+
+const staticUploadsMiddleware = express.static(uploadsAbsolutePath, {
     etag: false,
     lastModified: false,
-    setHeaders: (res) => {
-        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    setHeaders: (res, filePath) => {
+        // Set proper content type based on file extension
+        const ext = path.extname(filePath).toLowerCase();
+        const contentTypes = {
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.gif': 'image/gif',
+            '.webp': 'image/webp'
+        };
+        
+        if (contentTypes[ext]) {
+            res.setHeader('Content-Type', contentTypes[ext]);
+        }
+        
+        // Disable cache for development, enable short cache for production
+        if (process.env.NODE_ENV === 'production') {
+            res.setHeader('Cache-Control', 'public, max-age=31536000'); // 1 year cache
+        } else {
+            res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        }
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
         res.setHeader('Surrogate-Control', 'no-store');
     }
-}));
+});
+
+// Mount static file serving at both /uploads and /api/uploads for compatibility
+app.use('/uploads', staticUploadsMiddleware);
+app.use('/api/uploads', staticUploadsMiddleware);
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -200,8 +244,19 @@ app.listen(PORT, '0.0.0.0', () => {
     🚀 Cerata Pharma Backend - MongoDB Version
     📍 Port: ${PORT}
     🌐 Environment: ${process.env.NODE_ENV || 'development'}
+    📁 Uploads path: ${uploadsAbsolutePath}
     
     🔗 Health Check: http://localhost:${PORT}/health
     🔐 Login Endpoint: http://localhost:${PORT}/api/auth/login
+    📸 Static Files: http://localhost:${PORT}/uploads/
     `);
+    
+    // List existing files in uploads directory for debugging
+    if (fs.existsSync(path.join(uploadsAbsolutePath, 'products'))) {
+        const productFiles = fs.readdirSync(path.join(uploadsAbsolutePath, 'products'));
+        console.log(`\n📸 Found ${productFiles.length} product images`);
+        if (productFiles.length > 0) {
+            console.log(`   Sample: ${productFiles[0]}`);
+        }
+    }
 });

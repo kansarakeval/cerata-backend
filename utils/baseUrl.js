@@ -10,6 +10,7 @@ function getBaseUrl(req) {
         return envUrl;
     }
 
+    // Check for x-forwarded headers (when behind a proxy like Nginx)
     const hostHeader = req.get('x-forwarded-host') || req.get('host');
     if (hostHeader) {
         const protocolHeader = req.get('x-forwarded-proto');
@@ -20,6 +21,21 @@ function getBaseUrl(req) {
     return DEFAULT_LOCAL_URL;
 }
 
+function getUploadsBaseUrl(req) {
+    const baseUrl = getBaseUrl(req);
+    // Use /uploads path (not /api/uploads) for consistency
+    return `${baseUrl}/uploads`;
+}
+
+// Helper function to get absolute file path
+function getUploadsPath(subfolder = '') {
+    const path = require('path');
+    const uploadsRoot = path.join(__dirname, '..', 'uploads');
+    return subfolder ? path.join(uploadsRoot, subfolder) : uploadsRoot;
+}
+
 module.exports = {
-    getBaseUrl
+    getBaseUrl,
+    getUploadsBaseUrl,
+    getUploadsPath
 };

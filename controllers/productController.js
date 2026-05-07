@@ -2,7 +2,7 @@ const Product = require('../models/Product');
 const Category = require('../models/Category');
 const path = require('path');
 const fs = require('fs').promises;
-const { getBaseUrl } = require('../utils/baseUrl');
+const { getUploadsBaseUrl } = require('../utils/baseUrl');
 
 // Helper function
 const sanitizeParam = (param) => {
@@ -102,9 +102,9 @@ exports.createProduct = async (req, res) => {
         await product.save();
 
         // Prepare response
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         const productData = product.toJSON();
-        productData.image_url = product.image ? `${baseUrl}/uploads/products/${product.image}` : null;
+        productData.image_url = product.image ? `${uploadsBaseUrl}/products/${product.image}` : null;
 
         res.status(201).json({
             success: true,
@@ -154,10 +154,10 @@ exports.getAllProducts = async (req, res) => {
             Product.countDocuments(query)
         ]);
 
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         const productsWithUrl = products.map(product => {
             const productObj = product.toJSON();
-            productObj.image_url = product.image ? `${baseUrl}/uploads/products/${product.image}` : null;
+            productObj.image_url = product.image ? `${uploadsBaseUrl}/products/${product.image}` : null;
             productObj.category_name = product.category_id?.category_name || null;
             delete productObj.category_id;
             return productObj;
@@ -208,9 +208,9 @@ exports.getProductById = async (req, res) => {
             });
         }
 
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         const productObj = product.toJSON();
-        productObj.image_url = product.image ? `${baseUrl}/uploads/products/${product.image}` : null;
+        productObj.image_url = product.image ? `${uploadsBaseUrl}/products/${product.image}` : null;
         productObj.category_name = product.category_id?.category_name || null;
         delete productObj.category_id;
 
@@ -295,9 +295,9 @@ exports.updateProduct = async (req, res) => {
         // Get updated product with populated data
         const updatedProduct = await Product.findById(id).populate('category_id', 'category_name');
         
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         const productData = updatedProduct.toJSON();
-        productData.image_url = updatedProduct.image ? `${baseUrl}/uploads/products/${updatedProduct.image}` : null;
+        productData.image_url = updatedProduct.image ? `${uploadsBaseUrl}/products/${updatedProduct.image}` : null;
         productData.category_name = updatedProduct.category_id?.category_name || null;
         delete productData.category_id;
 
@@ -386,10 +386,10 @@ exports.getProductsByCategory = async (req, res) => {
             .populate('category_id', 'category_name')
             .sort({ api_product_name: 1 });
 
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         const productsWithUrl = products.map(product => {
             const productObj = product.toJSON();
-            productObj.image_url = product.image ? `${baseUrl}/uploads/products/${product.image}` : null;
+            productObj.image_url = product.image ? `${uploadsBaseUrl}/products/${product.image}` : null;
             productObj.category_name = product.category_id?.category_name || null;
             delete productObj.category_id;
             return productObj;
@@ -417,10 +417,10 @@ exports.getActiveProducts = async (req, res) => {
             .populate('category_id', 'category_name')
             .sort({ api_product_name: 1 });
 
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         const productsWithUrl = products.map(product => {
             const productObj = product.toJSON();
-            productObj.image_url = product.image ? `${baseUrl}/uploads/products/${product.image}` : null;
+            productObj.image_url = product.image ? `${uploadsBaseUrl}/products/${product.image}` : null;
             productObj.category_name = product.category_id?.category_name || null;
             delete productObj.category_id;
             return productObj;
@@ -483,10 +483,10 @@ exports.searchProducts = async (req, res) => {
             Product.countDocuments(query)
         ]);
 
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         const productsWithUrl = products.map(product => {
             const productObj = product.toJSON();
-            productObj.image_url = product.image ? `${baseUrl}/uploads/products/${product.image}` : null;
+            productObj.image_url = product.image ? `${uploadsBaseUrl}/products/${product.image}` : null;
             productObj.category_name = product.category_id?.category_name || null;
             delete productObj.category_id;
             return productObj;

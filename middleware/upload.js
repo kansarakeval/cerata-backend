@@ -4,11 +4,21 @@ const fs = require('fs');
 
 // Create upload directories
 const createUploadDirs = () => {
-    const dirs = ['uploads/categories', 'uploads/products', 'uploads/learns'];
+    const baseDir = path.join(__dirname, '..', 'uploads');
+    const dirs = ['categories', 'products', 'learns', 'others'];
+    
+    // Create main uploads directory
+    if (!fs.existsSync(baseDir)) {
+        fs.mkdirSync(baseDir, { recursive: true });
+        console.log(`Created directory: ${baseDir}`);
+    }
+    
+    // Create subdirectories
     dirs.forEach(dir => {
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-            console.log(`Created directory: ${dir}`);
+        const dirPath = path.join(baseDir, dir);
+        if (!fs.existsSync(dirPath)) {
+            fs.mkdirSync(dirPath, { recursive: true });
+            console.log(`Created directory: ${dirPath}`);
         }
     });
 };
@@ -18,29 +28,35 @@ createUploadDirs();
 // Storage configuration
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        let uploadPath = 'uploads/';
+        const baseDir = path.join(__dirname, '..', 'uploads');
+        let uploadPath = baseDir;
 
         // Route priority matters: learn category routes also include "/categories".
         if (req.originalUrl.includes('/learn')) {
-            uploadPath += 'learns/';
+            uploadPath = path.join(baseDir, 'learns');
         } else if (req.originalUrl.includes('/categories')) {
-            uploadPath += 'categories/';
+            uploadPath = path.join(baseDir, 'categories');
         } else if (req.originalUrl.includes('/products')) {
-            uploadPath += 'products/';
+            uploadPath = path.join(baseDir, 'products');
         } else {
-            uploadPath += 'others/';
+            uploadPath = path.join(baseDir, 'others');
         }
         
+        // Ensure directory exists
         if (!fs.existsSync(uploadPath)) {
             fs.mkdirSync(uploadPath, { recursive: true });
+            console.log(`Created directory: ${uploadPath}`);
         }
         
         cb(null, uploadPath);
     },
     filename: (req, file, cb) => {
-        const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        // Generate unique filename with timestamp and random number
+        const timestamp = Date.now();
+        const random = Math.round(Math.random() * 1E9);
         const ext = path.extname(file.originalname);
-        cb(null, uniqueName + ext);
+        const uniqueName = `${timestamp}-${random}${ext}`;
+        cb(null, uniqueName);
     }
 });
 
@@ -52,30 +68,37 @@ const fileFilter = (req, file, cb) => {
     if (mimetype && extname) {
         cb(null, true);
     } else {
-        cb(new Error('Only image files are allowed'));
+        cb(new Error('Only image files are allowed (jpeg, jpg, png, gif, webp)'));
     }
 };
 
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 },
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
     fileFilter: fileFilter
 });
 
-// Middleware wrapper
-const uploadMiddleware = (uploadType) => {
+// Middleware wrapper with better error handling
+const uploadMiddleware = (uploadType, fieldName = 'image') => {
     return (req, res, next) => {
         uploadType(req, res, (err) => {
             if (err) {
+                console.error('Upload error:', err);
                 if (err.code === 'LIMIT_FILE_SIZE') {
                     return res.status(400).json({
                         success: false,
                         message: 'File too large. Maximum size is 5MB.'
                     });
                 }
+                if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+                    return res.status(400).json({
+                        success: false,
+                        message: `Unexpected field. Expected "${fieldName}"`
+                    });
+                }
                 return res.status(400).json({
                     success: false,
-                    message: err.message
+                    message: err.message || 'File upload failed'
                 });
             }
             next();
@@ -86,5 +109,6 @@ const uploadMiddleware = (uploadType) => {
 module.exports = {
     uploadCategory: uploadMiddleware(upload.single('image')),
     uploadProduct: uploadMiddleware(upload.single('image')),
-    uploadLearn: uploadMiddleware(upload.single('image'))
+    uploadLearn: uploadMiddleware(upload.single('image')),
+    upload
 };

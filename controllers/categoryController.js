@@ -2,7 +2,7 @@ const Category = require('../models/Category');
 const Product = require('../models/Product');
 const path = require('path');
 const fs = require('fs').promises;
-const { getBaseUrl } = require('../utils/baseUrl');
+const { getUploadsBaseUrl } = require('../utils/baseUrl');
 
 exports.createCategory = async (req, res) => {
     try {
@@ -39,9 +39,9 @@ exports.createCategory = async (req, res) => {
 
         await category.save();
 
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         const categoryData = category.toJSON();
-        categoryData.image_url = category.image ? `${baseUrl}/uploads/categories/${category.image}` : null;
+        categoryData.image_url = category.image ? `${uploadsBaseUrl}/categories/${category.image}` : null;
 
         res.status(201).json({
             success: true,
@@ -61,13 +61,13 @@ exports.getAllCategories = async (req, res) => {
     try {
         const categories = await Category.find().sort({ created_at: -1 });
         
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         
         const categoriesWithDetails = await Promise.all(categories.map(async (category) => {
             const productCount = await Product.countDocuments({ category_id: category._id });
             
             const categoryObj = category.toJSON();
-            categoryObj.image_url = category.image ? `${baseUrl}/uploads/categories/${category.image}` : null;
+            categoryObj.image_url = category.image ? `${uploadsBaseUrl}/categories/${category.image}` : null;
             categoryObj.product_count = productCount;
             
             return categoryObj;
@@ -100,11 +100,11 @@ exports.getCategoryById = async (req, res) => {
             });
         }
 
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         const productCount = await Product.countDocuments({ category_id: category._id });
         
         const categoryObj = category.toJSON();
-        categoryObj.image_url = category.image ? `${baseUrl}/uploads/categories/${category.image}` : null;
+        categoryObj.image_url = category.image ? `${uploadsBaseUrl}/categories/${category.image}` : null;
         categoryObj.product_count = productCount;
 
         res.json({
@@ -168,10 +168,10 @@ exports.updateCategory = async (req, res) => {
 
         await category.save();
 
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         const productCount = await Product.countDocuments({ category_id: category._id });
         const categoryObj = category.toJSON();
-        categoryObj.image_url = category.image ? `${baseUrl}/uploads/categories/${category.image}` : null;
+        categoryObj.image_url = category.image ? `${uploadsBaseUrl}/categories/${category.image}` : null;
         categoryObj.product_count = productCount;
 
         res.json({
@@ -237,10 +237,10 @@ exports.getActiveCategories = async (req, res) => {
     try {
         const categories = await Category.find({ status: 'active' }).sort({ category_name: 1 });
         
-        const baseUrl = getBaseUrl(req);
+        const uploadsBaseUrl = getUploadsBaseUrl(req);
         const categoriesWithUrl = categories.map(category => {
             const catObj = category.toJSON();
-            catObj.image_url = category.image ? `${baseUrl}/uploads/categories/${category.image}` : null;
+            catObj.image_url = category.image ? `${uploadsBaseUrl}/categories/${category.image}` : null;
             return catObj;
         });
 
